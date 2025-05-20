@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Interface</title>
+    <!--GENERAL STYLE-->
+    <link rel="stylesheet" href="../static/css/general.css">
+    <!--SPECIFIC STYLE-->
+    <link rel="stylesheet" href="../static/css/uploadTool.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+    crossorigin="anonymous"></script>
+
+    <!--Montserrat-->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <!--Inter-->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!--FONTAWSOME-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        .file-type-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        .badge-text {
+            background-color: #c0d8f0;
+            color: #0d6efd;
+        }
+        .badge-text-db {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .badge-image {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .db-file-card {
+            border-left: 4px solid #198754;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="nav-list navbar-nav me-auto">
+                        <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                        {% if session.get('admin_id') %}
+                            <li class="nav-item"><a href="/uploadTool" class="nav-link active">Upload Files</a></li>
+                        {% endif %}
+                        <li class="nav-item"><a href="/dataExploration" class="nav-link">Data Exploration Dashboard</a></li>
+                        <li class="nav-item"><a href="/about" class="nav-link">About & Contact</a></li>
+                    </ul>
+                    <ul class="nav-list navbar-nav login">
+                        {% if session.get('admin_id') %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
+                                    <div class="user-icon">👤</div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="/logout">Log out</a></li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item"><a href="/login" class="nav-link active">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="upload-background">
+        <h1>Uploading new data</h1>
+    </div>
+
+    <main class="container my-4">
+        <section class="upload-section">
+            <div class="upload-box">
+                <h3>Text files</h3>
+                <p>Browse your local files</p>
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="type" value="text">
+                    <div class="mb-3">
+                        <input type="file" name="files" multiple required class="form-control">
+                    </div>
+                    <div>
+                        <button type="submit" class="uploadButton d-block">Upload Text Files</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="upload-box">
+                <h3>Multimedia files</h3>
+                <p>Browse your local files</p>
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="type" value="image">
+                    <div class="mb-3">
+                        <input type="file" name="files" multiple required class="form-control">
+                    </div>
+                    <div>
+                        <button type="submit" class="uploadButton d-block">Upload Images</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="file-management">
+            <h3>Select current files</h3>
+            <p>Manage current files for deleting or changing them.</p>
+          
+            <!-- Filter tabs -->
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" data-filter="all">Todos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-filter="text">Archivos de Texto</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-filter="image">Imágenes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-filter="text_db">En Base de Datos</a>
+                </li>
+            </ul>
+          
+            <!-- Search bar -->
+            <div class="search-bar mb-3">
+              <input id="searchInput" type="text" placeholder="Search" class="form-control">
+            </div>
+          
+            <!-- Toggle view button -->
+            <button id="toggleView" class="view-button mb-3 btn btn-outline-secondary">
+              <i id="viewIcon" class="fa-solid fa-th-large"></i> View
+            </button>
+          
+            <div id="fileContainer" class="file-grid mt-4">
+              {% for file in files %}
+                <div class="file-card {% if file.type == 'text_db' %}db-file-card{% endif %}" data-type="{{ file.type }}">
+                  <div class="file-preview mb-2">
+                    {% if file.type == 'image' %}
+                      <img src="{{ url_for('serve_multimedia', filename=file.path) }}"
+                           alt="{{ file.name }}"
+                           class="img-fluid">
+                    {% elif file.type == 'text_db' %}
+                      <i class="fa fa-database fa-3x text-success"></i>
+                    {% else %}
+                      <i class="fa fa-file-alt fa-3x"></i>
+                    {% endif %}
+                  </div>
+                  <div class="file-info mb-2">
+                    <h4 class="file-name">{{ file.name }}</h4>
+                    {% if file.type == 'text' %}
+                      <span class="file-type-badge badge-text">Texto</span>
+                    {% elif file.type == 'text_db' %}
+                      <span class="file-type-badge badge-text-db">Base de Datos</span>
+                      {% if file.person %}
+                      <p><small>Persona: {{ file.person }}</small></p>
+                      {% endif %}
+                    {% elif file.type == 'image' %}
+                      <span class="file-type-badge badge-image">Imagen</span>
+                    {% endif %}
+                  </div>
+                  <div class="file-actions">
+                    {% if file.type != 'text_db' %}
+                        <!-- REPLACE form -->
+                        <form action="{{ url_for('replace_file') }}" method="post"
+                            enctype="multipart/form-data" class="d-inline">
+                        <input type="hidden" name="orig_path" value="{{ file.path }}">
+                        <input type="file" name="new_file" required
+                                class="form-control form-control-sm d-inline-block"
+                                style="width: auto;">
+                        <button type="submit" class="btn btn-sm btn-secondary changeButton">
+                            Change
+                        </button>
+                        </form>
+
+                        <!-- DELETE form -->
+                        <form action="{{ url_for('delete_file') }}" method="post" class="d-inline">
+                        <input type="hidden" name="file_path" value="{{ file.path }}">
+                        <button type="submit" class="btn btn-sm btn-danger deleteButton">
+                            Delete
+                        </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('file_details', file_id=file.id) }}" class="btn btn-sm btn-info">Ver detalles</a>
+                    {% endif %}
+                  </div>
+                </div>
+              {% else %}
+                <p>No files uploaded yet.</p>
+              {% endfor %}
+            </div>
+          
+            <script>
+              // Search filter
+              document.getElementById('searchInput').addEventListener('input', function() {
+                const filter = this.value.toLowerCase();
+                document.querySelectorAll('#fileContainer .file-card').forEach(card => {
+                  const title = card.querySelector('.file-name').textContent.toLowerCase();
+                  card.style.display = title.includes(filter) ? '' : 'none';
+                });
+              });
+          
+              // Toggle view
+              document.getElementById('toggleView').addEventListener('click', function() {
+                let fileContainer = document.getElementById('fileContainer');
+                let viewIcon = document.getElementById('viewIcon');
+                if (fileContainer.classList.contains('file-grid')) {
+                  fileContainer.classList.replace('file-grid','file-list');
+                  viewIcon.classList.replace('fa-th-large','fa-list');
+                } else {
+                  fileContainer.classList.replace('file-list','file-grid');
+                  viewIcon.classList.replace('fa-list','fa-th-large');
+                }
+              });
+              
+              // Filter tabs
+              document.querySelectorAll('.nav-link').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  
+                  // Update active tab
+                  document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
+                  this.classList.add('active');
+                  
+                  const filter = this.getAttribute('data-filter');
+                  
+                  document.querySelectorAll('#fileContainer .file-card').forEach(card => {
+                    if (filter === 'all') {
+                      card.style.display = '';
+                    } else {
+                      card.style.display = card.getAttribute('data-type') === filter ? '' : 'none';
+                    }
+                  });
+                });
+              });
+            </script>
+          </section>
+          
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="logo"><img src="../static/images/Kulturparken.png"></div>
+            <div>
+                <p>House of Emigrants visiting address:</p>
+                <p>Vilhelm Mobergs gata 4, 352 29 Växjö.</p>
+            </div>
+            <div>
+                <p>About the House of Emigrants</p>
+                <p><a href="https://www.kulturparkensmaland.se/en/the-house-of-emigrants/">https://www.kulturparkensmaland.se/en/the-house-of-emigrants/</a></p>
+                <p>Contact information:</p>
+                <p>+46 470-70 42 00</p>
+                <p><a href="mailto:information@kulturparkensmaland.se">information@kulturparkensmaland.se</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Exploration Dashboard</title>
+
+    <!--GENERAL STYLE-->
+    <link rel="stylesheet" href="../static/css/general.css" />
+    <!--SPECIFIC STYLE-->
+    <link rel="stylesheet" href="../static/css/dataExploration.css" />
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
+      crossorigin="anonymous"
+    />
+
+    <!-- Bootstrap JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+
+    <!--Montserrat-->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    
+    <!-- Dashboard JS -->
+    <script src="../static/js/dataExploration.js"></script>
+  </head>
+  <body>
+    
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <!-- Hamburger Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+    
+            <!-- Navigation Items -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="nav-list navbar-nav me-auto">
+                    <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                    {% if session.get('admin_id') %}
+                        <li class="nav-item"><a href="/uploadTool" class="nav-link">Upload Files</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a href="/dataExploration" class="nav-link active">Data Exploration Dashboard</a></li>
+                    <li class="nav-item"><a href="/about" class="nav-link">About & Contact</a></li>
+                </ul>
+                <ul class="nav-list navbar-nav login">
+                    {% if session.get('admin_id') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
+                                <div class="user-icon">👤</div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="/logout">Log out</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a href="/login" class="nav-link">Login</a></li>
+                    {% endif %}
+                </ul>                    
+            </div>
+        </div>
+    </nav>    
+  </header>
+
+    <div class="container-fluid p-0">
+      <section class="hero">
+        <h1>Data Exploration and Dashboard</h1>
+        <p class="mt-2">Discover insights from historical emigration data</p>
+      </section>
+    </div>
+
+    <div class="container">
+      <!-- Filter Card -->
+      <div class="filter-card">
+        <div class="filter-card-header">
+          <h3><i class="fas fa-filter"></i> Filters</h3>
+        </div>
+        <div class="filter-card-body">
+          <form id="filter-form" action="/dataExploration" method="get">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="filter-group">
+                  <label for="region-select">
+                    <i class="fas fa-globe-americas"></i> Region
+                  </label>
+                  <select id="region-select" name="region" class="form-select">
+                    <option value="">Todas las Regiones</option>
+                    {% for region in available_regions %}
+                      <option value="{{ region }}" {% if current_region == region %}selected{% endif %}>{{ region }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="form-text small mt-1"><i class="fas fa-info-circle"></i> Selecciona una ciudad o región específica</div>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="filter-group">
+                  <label>
+                    <i class="fas fa-calendar-alt"></i> Time Period
+                  </label>
+                  <div class="date-inputs">
+                    <div class="date-input">
+                      <span class="date-label">From</span>
+                      <input type="date" id="start-date" name="start_date" value="{{ start_date }}" class="form-control">
+                    </div>
+                    <div class="date-input">
+                      <span class="date-label">To</span>
+                      <input type="date" id="end-date" name="end_date" value="{{ end_date }}" class="form-control">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-2">
+                <div class="filter-buttons">
+                  <button type="submit" class="btn-apply">
+                    <i class="fas fa-check"></i> Apply
+                  </button>
+                  <a href="/dataExploration" class="btn-reset">
+                    <i class="fas fa-undo-alt"></i> Reset
+                  </a>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!--Keywords section-->
+      <section class="card-section">
+        <h2>Keyword Selection Panel</h2>
+        <div class="keyword-panel">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Select keywords from the list below to filter the data visualization.
+          </div>
+          <div class="keyword-chips">
+            <!-- Palabras clave dinámicas de la base de datos -->
+            {% for word in all_keywords[:15] %}
+              <span class="keyword-chip">{{ word }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <!-- Timeline section -->
+      <section class="card-section">
+        <div class="card-header">
+          <h2><i class="fas fa-chart-line"></i> Trend graph</h2>
+          <button class="download-btn"><i class="fas fa-download"></i></button>
+        </div>
+        <div class="card-body">
+          <div id="timeline-chart" style="width:100%; height:400px;"></div>
+        </div>
+      </section>
+    
+      <!-- Word frequency section -->
+      <section class="card-section">
+        <div class="card-header">
+          <h2><i class="fas fa-font"></i> Word Frequency</h2>
+          <button class="download-btn"><i class="fas fa-download"></i></button>
+        </div>
+        <div class="card-body">
+          <div id="wordfreq-chart" style="width:100%; height:400px;"></div>
+        </div>
+      </section>
+
+      <!-- Map section -->
+      <section class="card-section">
+        <div class="card-header">
+          <h2><i class="fas fa-map-marked-alt"></i> Geographic Distribution</h2>
+          <button class="download-btn"><i class="fas fa-download"></i></button>
+        </div>
+        <div class="card-body">
+          <div id="geo-chart" style="width:100%; height:400px;"></div>
+        </div>
+      </section>
+
+      <!-- Stories section -->
+      <section class="card-section">
+        <div class="card-header">
+          <h2><i class="fas fa-book-open"></i> Recent Stories</h2>
+          <div class="search-box">
+            <input type="text" placeholder="Search for specific story">
+            <button><i class="fas fa-search"></i></button>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="stories-container">
+            {% for title, date, first, last, story_id in stories %}
+              <div class="story-card">
+                <div class="story-content">
+                  <h3>{{ title }}</h3>
+                  <p class="story-author">Author: {{ first }} {{ last }}</p>
+                </div>
+                <a href="#" class="view-story-btn" data-story-id="{{ story_id }}">View Details</a>
+              </div>
+            {% else %}
+              <div class="empty-state">
+                <i class="fas fa-book"></i>
+                <p>No recent stories available.</p>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>      
+    </div>
+
+    <!-- Modal para detalles de historia -->
+    <div class="modal fade" id="storyDetailsModal" tabindex="-1" aria-labelledby="storyModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="storyModalLabel">Detalles de la historia</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-8">
+                <!-- Información básica -->
+                <div class="story-modal-section">
+                  <h4 id="storyModalTitle" class="text-primary"></h4>
+                  <p class="text-muted" id="storyModalAuthor"></p>
+                </div>
+
+                <!-- Resumen -->
+                <div class="story-modal-section">
+                  <h5><i class="fas fa-file-alt"></i> Resumen</h5>
+                  <div class="p-3 bg-light rounded">
+                    <p id="storyModalSummary"></p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <!-- Información demográfica -->
+                <div class="story-modal-section">
+                  <h5><i class="fas fa-user"></i> Información personal</h5>
+                  <div class="info-item">
+                    <span class="info-label">Género:</span>
+                    <span id="storyModalGender"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Educación:</span>
+                    <span id="storyModalEducation"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Estado civil:</span>
+                    <span id="storyModalStatus"></span>
+                  </div>
+                </div>
+
+                <!-- Información de viaje -->
+                <div class="story-modal-section">
+                  <h5><i class="fas fa-plane"></i> Información de viaje</h5>
+                  <div class="info-item">
+                    <span class="info-label">País de origen:</span>
+                    <span id="storyModalCountry"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Fecha de salida:</span>
+                    <span id="storyModalDate"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Motivo:</span>
+                    <span id="storyModalMotive"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Método de viaje:</span>
+                    <span id="storyModalMethod"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Palabras clave -->
+            <div class="story-modal-section mt-3">
+              <h5><i class="fas fa-tags"></i> Palabras clave</h5>
+              <div id="storyModalKeywords" class="d-flex flex-wrap"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <a href="#" id="storyModalFullLink" class="btn btn-primary">Ver historia completa</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Inicializar los datos de los gráficos
+      const years = {{ timeline_years|safe }};
+      const counts = {{ timeline_counts|safe }};
+      const wfWords = {{ wf_words|safe }};
+      const wfCnts = {{ wf_counts|safe }};
+      const geoC = {{ geo_countries|safe }};
+      const geoCnt = {{ geo_counts|safe }};
+      
+      // Detalles de historias precargados
+      const storyDetailsData = {{ story_details|safe }};
+      
+      // Usar la función de configuración de gráficos
+      document.addEventListener('DOMContentLoaded', function() {
+        setupCharts(years, counts, wfWords, wfCnts, geoC, geoCnt);
+      });
+    </script>
+
+    <footer>
+      <div class="footer-content">
+          <div class="logo"><img src="../static/images/Kulturparken.png"></div>
+          <div>
+              <p>House of Emigrants visiting address:</p>
+              <p>Vilhelm Mobergs gata 4, 352 29 Växjö.</p>
+          </div>
+          <div>
+              <p>About the House of Emigrants</p>
+              <p><a href="https://www.kulturparkensmaland.se/en/the-house-of-emigrants/">https://www.kulturparkensmaland.se/en/the-house-of-emigrants/</a></p>
+              <p>Contact information:</p>
+              <p>+46 470-70 42 00</p>
+              <p><a href="mailto:information@kulturparkensmaland.se">information@kulturparkensmaland.se</a></p>
+          </div>
+      </div>
+  </footer>
+  </body>
+</html>
